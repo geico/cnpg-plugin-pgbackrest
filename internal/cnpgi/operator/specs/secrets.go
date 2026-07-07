@@ -33,6 +33,13 @@ func CollectSecretNamesFromCredentials(pgbackrestCredentials *pgbackrestApi.Pgba
 			pgbackrestCredentials.AWS.SecretAccessKeyReference,
 		)
 	}
+	if pgbackrestCredentials.Azure != nil {
+		references = append(
+			references,
+			pgbackrestCredentials.Azure.Account,
+			pgbackrestCredentials.Azure.Key,
+		)
+	}
 
 	result := make([]string, 0, len(references))
 	for _, reference := range references {
