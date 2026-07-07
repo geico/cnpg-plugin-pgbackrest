@@ -64,6 +64,34 @@ var _ = Describe("pgbackrestWalRestoreOptions", func() {
 	})
 })
 
+var _ = Describe("pgbackrestWalRestoreOptions with Azure repository", func() {
+	var storageConf *pgbackrestApi.PgbackrestConfiguration
+	BeforeEach(func() {
+		storageConf = &pgbackrestApi.PgbackrestConfiguration{
+			Repositories: []pgbackrestApi.PgbackrestRepository{
+				{
+					PgbackrestCredentials: pgbackrestApi.PgbackrestCredentials{
+						Azure: &pgbackrestApi.AzureCredentials{},
+					},
+					Bucket:          "container-name",
+					DestinationPath: "/",
+				},
+			},
+		}
+	})
+
+	It("should generate correct arguments for an Azure repository", func(ctx SpecContext) {
+		options, err := CloudWalRestoreOptions(ctx, storageConf, "test-cluster", "/var/lib/postgres/pgdata")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(strings.Join(options, " ")).
+			To(
+				Equal(
+					"--repo1-type azure --repo1-azure-container container-name --repo1-path / " +
+						"--pg1-path /var/lib/postgres/pgdata --stanza test-cluster",
+				))
+	})
+})
+
 var _ = Describe("PgbackrestRetention", func() {
 	var config *pgbackrestApi.PgbackrestConfiguration
 	var history int32 = 8
