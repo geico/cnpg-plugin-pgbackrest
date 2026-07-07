@@ -157,6 +157,9 @@ func appendCloudProviderOptions(
 	repoIndex int,
 	repository pgbackrestApi.PgbackrestRepository,
 ) ([]string, error) { // nolint: unparam
+	if repository.Azure != nil {
+		return appendAzureOptions(options, repoIndex, repository), nil
+	}
 	options = append(
 		options,
 		utils.FormatRepoFlag(repoIndex, "type"),
@@ -185,6 +188,33 @@ func appendCloudProviderOptions(
 		}
 	}
 	return options, nil
+}
+
+// appendAzureOptions adds the pgbackrest options required to use an Azure Blob Storage repository
+func appendAzureOptions(
+	options []string,
+	repoIndex int,
+	repository pgbackrestApi.PgbackrestRepository,
+) []string {
+	options = append(
+		options,
+		utils.FormatRepoFlag(repoIndex, "type"),
+		"azure")
+	if len(repository.EndpointURL) > 0 {
+		options = append(
+			options,
+			utils.FormatRepoFlag(repoIndex, "azure-endpoint"),
+			repository.EndpointURL)
+	}
+	if repository.DisableVerifyTLS {
+		options = append(
+			options,
+			utils.FormatRepoFlag(repoIndex, "storage-verify-tls=n"))
+	}
+	return append(options,
+		utils.FormatRepoFlag(repoIndex, "azure-container"), repository.Bucket,
+		utils.FormatRepoFlag(repoIndex, "path"), repository.DestinationPath,
+	)
 }
 
 // AppendStanzaOptionsFromConfiguration takes an options array and adds the necessary
