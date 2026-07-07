@@ -102,11 +102,43 @@ type S3Credentials struct {
 	URIStyle string `json:"uriStyle,omitempty"`
 }
 
+// AzureKeyType is the type of key used for Azure credentials
+type AzureKeyType string
+
+const (
+	// AzureKeyTypeShared uses a storage account shared key
+	AzureKeyTypeShared = AzureKeyType("shared")
+	// AzureKeyTypeSAS uses a shared access signature token
+	AzureKeyTypeSAS = AzureKeyType("sas")
+)
+
+// AzureCredentials is the type for the credentials to be used to upload
+// files to Azure Blob Storage.
+type AzureCredentials struct {
+	// KeyType specifies the type of key used, either "shared" (default) or "sas"
+	// +optional
+	// +kubebuilder:default:=shared
+	// +kubebuilder:validation:Enum=shared;sas
+	KeyType AzureKeyType `json:"keyType,omitempty"`
+
+	// The reference to the secret containing the storage account name
+	// +optional
+	Account *machineryapi.SecretKeySelector `json:"account,omitempty"`
+
+	// The reference to the secret containing the account shared key or SAS token
+	// +optional
+	Key *machineryapi.SecretKeySelector `json:"key,omitempty"`
+}
+
 // PgbackrestCredentials an object containing the potential credentials for each cloud provider
 type PgbackrestCredentials struct {
 	// The credentials to use to upload data to S3
 	// +optional
 	AWS *S3Credentials `json:"s3Credentials,omitempty"`
+
+	// The credentials to use to upload data to Azure Blob Storage
+	// +optional
+	Azure *AzureCredentials `json:"azureCredentials,omitempty"`
 }
 
 // PgbackrestRetention an object containing the backup retention time for all backup
@@ -356,7 +388,7 @@ type PgbackrestConfiguration struct {
 // ArePopulated checks if the passed set of credentials contains
 // something
 func (credentials PgbackrestCredentials) ArePopulated() bool {
-	return credentials.AWS != nil
+	return credentials.AWS != nil || credentials.Azure != nil
 }
 
 // AppendAdditionalRestoreCommandArgs adds custom arguments as pgbackrest restore command-line options
