@@ -113,6 +113,12 @@ func envSetCloudCredentials(
 				return nil, err
 			}
 		}
+		if repo.Azure != nil {
+			env, err = envSetAzureCredentials(ctx, c, namespace, repo.Azure, index, env)
+			if err != nil {
+				return nil, err
+			}
+		}
 		if len(repo.Encryption) != 0 {
 			env, err = envSetEncryptionCredentials(ctx, c, repo.Encryption, repo.EncryptionKey, namespace, index, env)
 			if err != nil {
@@ -174,6 +180,39 @@ func envSetAWSCredentials(
 
 	env = append(env, utils.FormatRepoEnv(repoIndex, "S3_KEY_TYPE", string(s3credentials.KeyType)))
 	env = append(env, utils.FormatRepoEnv(repoIndex, "S3_REGION", s3credentials.Region))
+
+	return env, nil
+}
+
+// envSetAzureCredentials sets the Azure environment variables given the configuration
+// inside the cluster
+func envSetAzureCredentials(
+	ctx context.Context,
+	client client.Client,
+	namespace string,
+	azureCredentials *pgbackrestApi.AzureCredentials,
+	repoIndex int,
+	env []string,
+) ([]string, error) {
+	if azureCredentials.Account == nil {
+		return nil, fmt.Errorf("missing Azure storage account")
+	}
+	account, err := extractValueFromSecret(ctx, client, azureCredentials.Account, namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	if azureCredentials.Key == nil {
+		return nil, fmt.Errorf("missing Azure account key")
+	}
+	key, err := extractValueFromSecret(ctx, client, azureCredentials.Key, namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	env = append(env, utils.FormatRepoEnv(repoIndex, "AZURE_ACCOUNT", string(account)))
+	env = append(env, utils.FormatRepoEnv(repoIndex, "AZURE_KEY", string(key)))
+	env = append(env, utils.FormatRepoEnv(repoIndex, "AZURE_KEY_TYPE", string(azureCredentials.KeyType)))
 
 	return env, nil
 }
