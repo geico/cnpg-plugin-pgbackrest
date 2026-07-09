@@ -90,6 +90,21 @@ var _ = Describe("pgbackrestWalRestoreOptions with Azure repository", func() {
 						"--pg1-path /var/lib/postgres/pgdata --stanza test-cluster",
 				))
 	})
+
+	It("should generate correct arguments for an Azure-compatible endpoint", func(ctx SpecContext) {
+		storageConf.Repositories[0].EndpointURL = "azurite:10000"
+		storageConf.Repositories[0].DisableVerifyTLS = true
+		storageConf.Repositories[0].Azure.URIStyle = "path"
+		options, err := CloudWalRestoreOptions(ctx, storageConf, "test-cluster", "/var/lib/postgres/pgdata")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(strings.Join(options, " ")).
+			To(
+				Equal(
+					"--repo1-type azure --repo1-azure-endpoint azurite:10000 --repo1-storage-verify-tls=n " +
+						"--repo1-azure-container container-name --repo1-path / --repo1-azure-uri-style path " +
+						"--pg1-path /var/lib/postgres/pgdata --stanza test-cluster",
+				))
+	})
 })
 
 var _ = Describe("PgbackrestRetention", func() {
