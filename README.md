@@ -219,6 +219,23 @@ spec:
     compression: zst
 ```
 
+When targeting an Azure-compatible endpoint (for example the
+[Azurite](https://github.com/Azure/Azurite) emulator), set an explicit
+`endpointURL` and use path-style addressing via `uriStyle: path`, since these
+endpoints expose the storage account name in the URL path rather than the host:
+
+```yaml
+        azureCredentials:
+          uriStyle: path
+          account:
+            name: azure
+            key: AZURE_STORAGE_ACCOUNT
+          key:
+            name: azure
+            key: AZURE_STORAGE_KEY
+        endpointURL: azurite:10000
+```
+
 > [!IMPORTANT]
 > Unlike Barman, pgBackRest requires object storage to be accessible over HTTPS. While
 > it's possible to disable key verification and use self-signed keys, using HTTP
