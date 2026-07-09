@@ -128,6 +128,12 @@ type AzureCredentials struct {
 	// The reference to the secret containing the account shared key or SAS token
 	// +optional
 	Key *machineryapi.SecretKeySelector `json:"key,omitempty"`
+
+	// Azure Repository URI style, either "host" (default) or "path".
+	// The "path" style is required when targeting Azure-compatible
+	// endpoints such as the Azurite emulator.
+	// +optional
+	URIStyle string `json:"uriStyle,omitempty"`
 }
 
 // PgbackrestCredentials an object containing the potential credentials for each cloud provider

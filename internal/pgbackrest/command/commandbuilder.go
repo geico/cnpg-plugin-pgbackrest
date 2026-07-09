@@ -211,10 +211,17 @@ func appendAzureOptions(
 			options,
 			utils.FormatRepoFlag(repoIndex, "storage-verify-tls=n"))
 	}
-	return append(options,
+	options = append(options,
 		utils.FormatRepoFlag(repoIndex, "azure-container"), repository.Bucket,
 		utils.FormatRepoFlag(repoIndex, "path"), repository.DestinationPath,
 	)
+	if repository.Azure != nil && len(repository.Azure.URIStyle) > 0 {
+		options = append(
+			options,
+			utils.FormatRepoFlag(repoIndex, "azure-uri-style"),
+			repository.Azure.URIStyle)
+	}
+	return options
 }
 
 // AppendStanzaOptionsFromConfiguration takes an options array and adds the necessary
