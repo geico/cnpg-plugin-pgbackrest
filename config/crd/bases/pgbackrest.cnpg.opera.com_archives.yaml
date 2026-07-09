@@ -149,6 +149,12 @@ spec:
                               - shared
                               - sas
                               type: string
+                            uriStyle:
+                              description: |-
+                                Azure Repository URI style, either "host" (default) or "path".
+                                The "path" style is required when targeting Azure-compatible
+                                endpoints such as the Azurite emulator.
+                              type: string
                           type: object
                         bucket:
                           minLength: 1
