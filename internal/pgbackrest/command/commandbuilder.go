@@ -200,12 +200,10 @@ func appendAzureOptions(
 		options,
 		utils.FormatRepoFlag(repoIndex, "type"),
 		"azure")
-	if len(repository.EndpointURL) > 0 {
-		options = append(
-			options,
-			utils.FormatRepoFlag(repoIndex, "azure-endpoint"),
-			repository.EndpointURL)
-	}
+	// The azure-endpoint override is intentionally not passed on the command line:
+	// pgBackRest rejects "repoN-azure-endpoint" as a CLI option (it could expose
+	// secrets in the process list). It is provided via the PGBACKREST_REPON_AZURE_ENDPOINT
+	// environment variable instead (see the credentials package).
 	if repository.DisableVerifyTLS {
 		options = append(
 			options,

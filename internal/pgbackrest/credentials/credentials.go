@@ -114,7 +114,7 @@ func envSetCloudCredentials(
 			}
 		}
 		if repo.Azure != nil {
-			env, err = envSetAzureCredentials(ctx, c, namespace, repo.Azure, index, env)
+			env, err = envSetAzureCredentials(ctx, c, namespace, repo.Azure, repo.EndpointURL, index, env)
 			if err != nil {
 				return nil, err
 			}
@@ -191,6 +191,7 @@ func envSetAzureCredentials(
 	client client.Client,
 	namespace string,
 	azureCredentials *pgbackrestApi.AzureCredentials,
+	endpointURL string,
 	repoIndex int,
 	env []string,
 ) ([]string, error) {
@@ -213,6 +214,14 @@ func envSetAzureCredentials(
 	env = append(env, utils.FormatRepoEnv(repoIndex, "AZURE_ACCOUNT", string(account)))
 	env = append(env, utils.FormatRepoEnv(repoIndex, "AZURE_KEY", string(key)))
 	env = append(env, utils.FormatRepoEnv(repoIndex, "AZURE_KEY_TYPE", string(azureCredentials.KeyType)))
+
+	// The azure-endpoint override cannot be passed on the command line (pgBackRest
+	// rejects it to avoid exposing secrets in the process list), so it is provided
+	// as an environment variable. Only set when an endpoint override is configured;
+	// real Azure Blob Storage relies on endpoint auto-discovery.
+	if len(endpointURL) > 0 {
+		env = append(env, utils.FormatRepoEnv(repoIndex, "AZURE_ENDPOINT", endpointURL))
+	}
 
 	return env, nil
 }

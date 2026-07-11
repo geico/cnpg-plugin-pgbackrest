@@ -71,7 +71,7 @@ var _ = Describe("envSetAzureCredentials", func() {
 	})
 
 	It("exports the Azure environment variables from the referenced secret", func(ctx SpecContext) {
-		env, err := envSetAzureCredentials(ctx, cl, namespace, credentials, 0, nil)
+		env, err := envSetAzureCredentials(ctx, cl, namespace, credentials, "", 0, nil)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(env).To(ConsistOf(
 			"PGBACKREST_REPO1_AZURE_ACCOUNT=storageaccountname",
@@ -80,21 +80,33 @@ var _ = Describe("envSetAzureCredentials", func() {
 		))
 	})
 
+	It("exports the endpoint override as an environment variable when configured", func(ctx SpecContext) {
+		env, err := envSetAzureCredentials(ctx, cl, namespace, credentials, "azurite:10000", 0, nil)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(env).To(ContainElement("PGBACKREST_REPO1_AZURE_ENDPOINT=azurite:10000"))
+	})
+
+	It("does not export an endpoint variable when no override is configured", func(ctx SpecContext) {
+		env, err := envSetAzureCredentials(ctx, cl, namespace, credentials, "", 0, nil)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(env).ToNot(ContainElement(ContainSubstring("AZURE_ENDPOINT")))
+	})
+
 	It("fails when the storage account reference is missing", func(ctx SpecContext) {
 		credentials.Account = nil
-		_, err := envSetAzureCredentials(ctx, cl, namespace, credentials, 0, nil)
+		_, err := envSetAzureCredentials(ctx, cl, namespace, credentials, "", 0, nil)
 		Expect(err).To(MatchError(ContainSubstring("missing Azure storage account")))
 	})
 
 	It("fails when the account key reference is missing", func(ctx SpecContext) {
 		credentials.Key = nil
-		_, err := envSetAzureCredentials(ctx, cl, namespace, credentials, 0, nil)
+		_, err := envSetAzureCredentials(ctx, cl, namespace, credentials, "", 0, nil)
 		Expect(err).To(MatchError(ContainSubstring("missing Azure account key")))
 	})
 
 	It("fails when the referenced secret key does not exist", func(ctx SpecContext) {
 		credentials.Key.Key = "MISSING_KEY"
-		_, err := envSetAzureCredentials(ctx, cl, namespace, credentials, 0, nil)
+		_, err := envSetAzureCredentials(ctx, cl, namespace, credentials, "", 0, nil)
 		Expect(err).To(MatchError(ContainSubstring("missing key MISSING_KEY")))
 	})
 })
