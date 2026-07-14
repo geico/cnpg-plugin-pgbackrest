@@ -222,9 +222,9 @@ spec:
 
 This configuration enables both WAL archiving and data directory backups.
 
-> [!IMPORTANT]
-> Archiving will only start working after at least one backup is created. That's due to
-> the stanza creation process which currently is only executed on backups.
+> [!NOTE]
+> The pgbackrest stanza is created automatically on the first WAL archive, so WAL
+> archiving works without taking a backup first.
 
 ### Performing a Base Backup
 
