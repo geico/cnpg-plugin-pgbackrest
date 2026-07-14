@@ -35,6 +35,7 @@ import (
 	"github.com/operasoftware/cnpg-plugin-pgbackrest/internal/cnpgi/metadata"
 	"github.com/operasoftware/cnpg-plugin-pgbackrest/internal/cnpgi/operator/config"
 	"github.com/operasoftware/cnpg-plugin-pgbackrest/internal/pgbackrest/archiver"
+	pgbackrestBackup "github.com/operasoftware/cnpg-plugin-pgbackrest/internal/pgbackrest/backup"
 	pgbackrestCommand "github.com/operasoftware/cnpg-plugin-pgbackrest/internal/pgbackrest/command"
 	pgbackrestCredentials "github.com/operasoftware/cnpg-plugin-pgbackrest/internal/pgbackrest/credentials"
 	pgbackrestRestorer "github.com/operasoftware/cnpg-plugin-pgbackrest/internal/pgbackrest/restorer"
@@ -136,11 +137,20 @@ func (w WALServiceImplementation) Archive(
 		return &wal.WALArchiveResult{}, nil
 	}
 
-	// Check if we're ok to archive in the desired destination
-	err = arch.CheckWalArchiveDestination(ctx, &archive.Spec.Configuration, configuration.Stanza, envArchive)
+	// Ensure the destination archive is ready. The stanza is created lazily on the
+	// first WAL archive so that WAL archiving works without taking a backup first.
+	stanzaExists, err := arch.StanzaExists(ctx, &archive.Spec.Configuration, configuration.Stanza, envArchive)
 	if err != nil {
-		log.Error(err, "while checking if pgbackrest repo can be used for archival")
+		contextLogger.Error(err, "while checking if the pgbackrest stanza exists")
 		return nil, err
+	}
+	if !stanzaExists {
+		contextLogger.Info("stanza not found, creating it before archiving")
+		stanzaCmd := pgbackrestBackup.NewBackupCommand(&archive.Spec.Configuration, nil, w.PGDataPath)
+		if err = stanzaCmd.CreatePgbackrestStanza(ctx, configuration.Stanza, envArchive); err != nil {
+			contextLogger.Error(err, "while creating pgbackrest stanza for WAL archiving")
+			return nil, err
+		}
 	}
 
 	options, err := arch.PgbackrestWalArchiveOptions(ctx, &archive.Spec.Configuration, configuration.Stanza)

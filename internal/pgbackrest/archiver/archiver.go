@@ -143,6 +143,24 @@ func (archiver *WALArchiver) CheckWalArchiveDestination(
 	return err
 }
 
+// StanzaExists reports whether the pgbackrest stanza has already been created in
+// the destination archive. A missing stanza is reported as (false, nil) so the
+// caller can create it, while genuine failures (e.g. unreachable store) return an
+// error. "pgbackrest info" exits successfully even for a missing stanza, so the
+// stanza status code is inspected instead of relying on the command exit status.
+func (archiver *WALArchiver) StanzaExists(
+	ctx context.Context,
+	configuration *pgbackrestApi.PgbackrestConfiguration,
+	stanza string,
+	env []string,
+) (bool, error) {
+	backupList, err := pgbackrestCommand.GetBackupList(ctx, configuration, stanza, env)
+	if err != nil {
+		return false, err
+	}
+	return backupList.StanzaExists(), nil
+}
+
 // PgbackrestCheckWalArchiveOptions create the options needed for the `pgbackrest check`
 // command.
 func (archiver *WALArchiver) PgbackrestCheckWalArchiveOptions(
