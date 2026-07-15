@@ -102,6 +102,61 @@ spec:
                           pgbackrest --annotation option.
                         type: object
                     type: object
+                  log:
+                    description: |-
+                      The logging configuration applied to all pgBackRest commands.
+                      When not defined, stderr logging is set to "warn", console logging is
+                      disabled and no file logging is configured.
+                    properties:
+                      levelConsole:
+                        description: |-
+                          Log level for messages written to the console (stdout).
+                          Defaults to "off". Note that pgBackRest commands producing JSON output
+                          (e.g. "info --output=json") write that JSON to stdout as well, so raising
+                          this level may corrupt output parsing. Change it at your own risk.
+                        enum:
+                        - "off"
+                        - error
+                        - warn
+                        - info
+                        - detail
+                        - debug
+                        - trace
+                        type: string
+                      levelFile:
+                        description: |-
+                          Log level for messages written to log files.
+                          When unset no file logging option is passed to pgBackRest.
+                          Requires a writable Path to be useful.
+                        enum:
+                        - "off"
+                        - error
+                        - warn
+                        - info
+                        - detail
+                        - debug
+                        - trace
+                        type: string
+                      levelStderr:
+                        description: |-
+                          Log level for messages written to stderr.
+                          Defaults to "warn".
+                        enum:
+                        - "off"
+                        - error
+                        - warn
+                        - info
+                        - detail
+                        - debug
+                        - trace
+                        type: string
+                      path:
+                        description: |-
+                          Path is the directory where pgBackRest writes log files.
+                          It must point to a writable directory. When unset no log path option is
+                          passed to pgBackRest.
+                        type: string
+                    type: object
                   repositories:
                     items:
                       description: |-

@@ -253,6 +253,38 @@ type DataBackupConfiguration struct {
 	AdditionalCommandArgs []string `json:"additionalCommandArgs,omitempty"`
 }
 
+// PgbackrestLogConfiguration controls the pgBackRest logging destinations and
+// verbosity levels. All fields are optional; when unset the plugin keeps its
+// historical defaults (stderr at "warn", console "off" and no file logging).
+type PgbackrestLogConfiguration struct {
+	// Log level for messages written to the console (stdout).
+	// Defaults to "off". Note that pgBackRest commands producing JSON output
+	// (e.g. "info --output=json") write that JSON to stdout as well, so raising
+	// this level may corrupt output parsing. Change it at your own risk.
+	// +optional
+	// +kubebuilder:validation:Enum=off;error;warn;info;detail;debug;trace
+	LevelConsole string `json:"levelConsole,omitempty"`
+
+	// Log level for messages written to stderr.
+	// Defaults to "warn".
+	// +optional
+	// +kubebuilder:validation:Enum=off;error;warn;info;detail;debug;trace
+	LevelStderr string `json:"levelStderr,omitempty"`
+
+	// Log level for messages written to log files.
+	// When unset no file logging option is passed to pgBackRest.
+	// Requires a writable Path to be useful.
+	// +optional
+	// +kubebuilder:validation:Enum=off;error;warn;info;detail;debug;trace
+	LevelFile string `json:"levelFile,omitempty"`
+
+	// Path is the directory where pgBackRest writes log files.
+	// It must point to a writable directory. When unset no log path option is
+	// passed to pgBackRest.
+	// +optional
+	Path string `json:"path,omitempty"`
+}
+
 // DataRestoreConfiguration is the configuration of the main backup restore process
 // (pgbackrest restore call) which is then followed by a series of WAL restore
 // (pgbackrest archive-get) calls using the WalBackupConfiguration
@@ -351,6 +383,12 @@ type PgbackrestConfiguration struct {
 	// this parameter is omitted
 	// +optional
 	Stanza string `json:"stanza,omitempty"`
+
+	// The logging configuration applied to all pgBackRest commands.
+	// When not defined, stderr logging is set to "warn", console logging is
+	// disabled and no file logging is configured.
+	// +optional
+	Log *PgbackrestLogConfiguration `json:"log,omitempty"`
 }
 
 // ArePopulated checks if the passed set of credentials contains

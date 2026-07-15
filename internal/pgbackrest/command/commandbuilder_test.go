@@ -64,6 +64,45 @@ var _ = Describe("pgbackrestWalRestoreOptions", func() {
 	})
 })
 
+var _ = Describe("appendLogOptions", func() {
+	It("should use the default log levels when no log configuration is provided", func(ctx SpecContext) {
+		config := &pgbackrestApi.PgbackrestConfiguration{}
+		options, err := appendLogOptions(ctx, nil, config)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(strings.Join(options, " ")).
+			To(Equal("--log-level-stderr warn --log-level-console off"))
+	})
+
+	It("should honor the configured console and stderr log levels", func(ctx SpecContext) {
+		config := &pgbackrestApi.PgbackrestConfiguration{
+			Log: &pgbackrestApi.PgbackrestLogConfiguration{
+				LevelStderr:  "debug",
+				LevelConsole: "info",
+			},
+		}
+		options, err := appendLogOptions(ctx, nil, config)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(strings.Join(options, " ")).
+			To(Equal("--log-level-stderr debug --log-level-console info"))
+	})
+
+	It("should emit file logging options only when configured", func(ctx SpecContext) {
+		config := &pgbackrestApi.PgbackrestConfiguration{
+			Log: &pgbackrestApi.PgbackrestLogConfiguration{
+				LevelFile: "debug",
+				Path:      "/controller/tmp/pgbackrest-logs",
+			},
+		}
+		options, err := appendLogOptions(ctx, nil, config)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(strings.Join(options, " ")).
+			To(Equal(
+				"--log-level-stderr warn --log-level-console off " +
+					"--log-level-file debug --log-path /controller/tmp/pgbackrest-logs",
+			))
+	})
+})
+
 var _ = Describe("PgbackrestRetention", func() {
 	var config *pgbackrestApi.PgbackrestConfiguration
 	var history int32 = 8
