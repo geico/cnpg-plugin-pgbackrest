@@ -154,6 +154,9 @@ spec:
                                 Azure Repository URI style, either "host" (default) or "path".
                                 The "path" style is required when targeting Azure-compatible
                                 endpoints such as the Azurite emulator.
+                              enum:
+                              - host
+                              - path
                               type: string
                           type: object
                         bucket:
@@ -328,6 +331,9 @@ spec:
                             uriStyle:
                               description: S3 Repository URI style, either "host"
                                 (default) or "path".
+                              enum:
+                              - host
+                              - path
                               type: string
                           type: object
                       required:

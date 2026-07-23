@@ -97,8 +97,8 @@ type S3Credentials struct {
 	Region string `json:"region,omitempty"`
 
 	// S3 Repository URI style, either "host" (default) or "path".
-	// TODO: Enforce values via Enum like iin compression.
 	// +optional
+	// +kubebuilder:validation:Enum=host;path
 	URIStyle string `json:"uriStyle,omitempty"`
 }
 
@@ -133,6 +133,7 @@ type AzureCredentials struct {
 	// The "path" style is required when targeting Azure-compatible
 	// endpoints such as the Azurite emulator.
 	// +optional
+	// +kubebuilder:validation:Enum=host;path
 	URIStyle string `json:"uriStyle,omitempty"`
 }
 
