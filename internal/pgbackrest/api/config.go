@@ -255,16 +255,14 @@ type DataBackupConfiguration struct {
 
 // LogConfiguration controls the pgBackRest logging destinations and
 // verbosity levels. All fields are optional; when unset the plugin keeps its
-// historical defaults (stderr at "warn", console "off" and no file logging).
+// historical defaults (stderr at "warn" and no file logging).
+//
+// Console (stdout) logging is intentionally not configurable: the plugin
+// streams pgBackRest's stderr into the pod logs and reserves stdout for the
+// machine-readable JSON emitted by "info --output=json". Console logging is
+// therefore always pinned to "off" so that JSON output stays parseable. Use
+// LevelStderr for pod-log verbosity and LevelFile for on-disk detail.
 type LogConfiguration struct {
-	// Log level for messages written to the console (stdout).
-	// Defaults to "off". Note that pgBackRest commands producing JSON output
-	// (e.g. "info --output=json") write that JSON to stdout as well, so raising
-	// this level may corrupt output parsing. Change it at your own risk.
-	// +optional
-	// +kubebuilder:validation:Enum=off;error;warn;info;detail;debug;trace
-	LevelConsole string `json:"levelConsole,omitempty"`
-
 	// Log level for messages written to stderr.
 	// Defaults to "warn".
 	// +optional
@@ -385,8 +383,9 @@ type PgbackrestConfiguration struct {
 	Stanza string `json:"stanza,omitempty"`
 
 	// The logging configuration applied to all pgBackRest commands.
-	// When not defined, stderr logging is set to "warn", console logging is
-	// disabled and no file logging is configured.
+	// When not defined, stderr logging is set to "warn" and no file logging is
+	// configured. Console (stdout) logging is always pinned to "off" so that the
+	// JSON emitted by "info --output=json" stays parseable.
 	// +optional
 	Log *LogConfiguration `json:"log,omitempty"`
 }

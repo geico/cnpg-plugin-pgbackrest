@@ -267,20 +267,23 @@ func ensureLogPath(ctx context.Context, configuration *pgbackrestApi.PgbackrestC
 
 // appendLogOptions takes an options array and adds the pgbackrest logging options.
 // When no log configuration is provided it preserves the historical defaults:
-// stderr at "warn", console "off" and no file logging.
+// stderr at "warn" and no file logging.
+//
+// Console logging is always pinned to "off" and is deliberately not
+// configurable: the plugin reserves stdout for the machine-readable JSON emitted
+// by "info --output=json", so any console output would corrupt catalog parsing.
+// pgBackRest's own default for log-level-console is "warn", so we must pass the
+// flag explicitly rather than rely on the default. Pod-log verbosity is
+// controlled via stderr, and on-disk detail via file logging.
 func appendLogOptions(
 	_ context.Context,
 	options []string,
 	configuration *pgbackrestApi.PgbackrestConfiguration,
 ) ([]string, error) {
-	consoleLevel := "off"
 	stderrLevel := "warn"
 
 	logConfig := configuration.Log
 	if logConfig != nil {
-		if logConfig.LevelConsole != "" {
-			consoleLevel = logConfig.LevelConsole
-		}
 		if logConfig.LevelStderr != "" {
 			stderrLevel = logConfig.LevelStderr
 		}
@@ -291,7 +294,7 @@ func appendLogOptions(
 		"--log-level-stderr",
 		stderrLevel,
 		"--log-level-console",
-		consoleLevel,
+		"off",
 	)
 
 	if logConfig != nil {

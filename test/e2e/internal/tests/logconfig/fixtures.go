@@ -47,9 +47,8 @@ const (
 	logPath = "/controller/tmp/pgbackrest-logs"
 
 	// The configured log levels under test.
-	consoleLevel = "off"
-	stderrLevel  = "debug"
-	fileLevel    = "debug"
+	stderrLevel = "debug"
+	fileLevel   = "debug"
 )
 
 type logConfigTestResources struct {
@@ -65,10 +64,9 @@ type logConfigTestResources struct {
 func createLogConfigTestResources(namespace string) logConfigTestResources {
 	archive := objectstore.NewMinioArchive(namespace, archiveName, minio, 1)
 	archive.Spec.Configuration.Log = &pgbackrestApi.LogConfiguration{
-		LevelConsole: consoleLevel,
-		LevelStderr:  stderrLevel,
-		LevelFile:    fileLevel,
-		Path:         logPath,
+		LevelStderr: stderrLevel,
+		LevelFile:   fileLevel,
+		Path:        logPath,
 	}
 
 	return logConfigTestResources{

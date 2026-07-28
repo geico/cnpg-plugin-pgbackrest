@@ -112,7 +112,9 @@ var _ = Describe("Configurable pgBackRest log levels", func() {
 		// log configuration, with the exact values we set.
 		expectedFlags := []string{
 			fmt.Sprintf("--log-level-stderr %s", stderrLevel),
-			fmt.Sprintf("--log-level-console %s", consoleLevel),
+			// Console logging is always pinned to "off" by the plugin so that it
+			// never corrupts the JSON emitted by "info --output=json".
+			"--log-level-console off",
 			fmt.Sprintf("--log-level-file %s", fileLevel),
 			fmt.Sprintf("--log-path %s", logPath),
 		}
