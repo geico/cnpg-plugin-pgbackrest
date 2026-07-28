@@ -64,7 +64,7 @@ type logConfigTestResources struct {
 // cluster wired to the plugin and a plugin backup.
 func createLogConfigTestResources(namespace string) logConfigTestResources {
 	archive := objectstore.NewMinioArchive(namespace, archiveName, minio, 1)
-	archive.Spec.Configuration.Log = &pgbackrestApi.PgbackrestLogConfiguration{
+	archive.Spec.Configuration.Log = &pgbackrestApi.LogConfiguration{
 		LevelConsole: consoleLevel,
 		LevelStderr:  stderrLevel,
 		LevelFile:    fileLevel,

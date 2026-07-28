@@ -253,10 +253,10 @@ type DataBackupConfiguration struct {
 	AdditionalCommandArgs []string `json:"additionalCommandArgs,omitempty"`
 }
 
-// PgbackrestLogConfiguration controls the pgBackRest logging destinations and
+// LogConfiguration controls the pgBackRest logging destinations and
 // verbosity levels. All fields are optional; when unset the plugin keeps its
 // historical defaults (stderr at "warn", console "off" and no file logging).
-type PgbackrestLogConfiguration struct {
+type LogConfiguration struct {
 	// Log level for messages written to the console (stdout).
 	// Defaults to "off". Note that pgBackRest commands producing JSON output
 	// (e.g. "info --output=json") write that JSON to stdout as well, so raising
@@ -388,7 +388,7 @@ type PgbackrestConfiguration struct {
 	// When not defined, stderr logging is set to "warn", console logging is
 	// disabled and no file logging is configured.
 	// +optional
-	Log *PgbackrestLogConfiguration `json:"log,omitempty"`
+	Log *LogConfiguration `json:"log,omitempty"`
 }
 
 // ArePopulated checks if the passed set of credentials contains

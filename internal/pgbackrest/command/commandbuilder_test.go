@@ -75,7 +75,7 @@ var _ = Describe("appendLogOptions", func() {
 
 	It("should honor the configured console and stderr log levels", func(ctx SpecContext) {
 		config := &pgbackrestApi.PgbackrestConfiguration{
-			Log: &pgbackrestApi.PgbackrestLogConfiguration{
+			Log: &pgbackrestApi.LogConfiguration{
 				LevelStderr:  "debug",
 				LevelConsole: "info",
 			},
@@ -88,7 +88,7 @@ var _ = Describe("appendLogOptions", func() {
 
 	It("should emit file logging options only when configured", func(ctx SpecContext) {
 		config := &pgbackrestApi.PgbackrestConfiguration{
-			Log: &pgbackrestApi.PgbackrestLogConfiguration{
+			Log: &pgbackrestApi.LogConfiguration{
 				LevelFile: "debug",
 				Path:      "/controller/tmp/pgbackrest-logs",
 			},
