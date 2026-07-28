@@ -20,7 +20,10 @@ package command
 import (
 	"context"
 	"fmt"
+	"os"
 	"strconv"
+
+	"github.com/cloudnative-pg/machinery/pkg/log"
 
 	pgbackrestApi "github.com/operasoftware/cnpg-plugin-pgbackrest/internal/pgbackrest/api"
 	"github.com/operasoftware/cnpg-plugin-pgbackrest/internal/pgbackrest/utils"
@@ -230,31 +233,78 @@ func appendStanzaOptions(
 	return options, nil
 }
 
-// AppendLogOptionsFromConfiguration takes an options array and adds the necessary
-// stanza-specific options required for all operations connecting to the database
+// AppendLogOptionsFromConfiguration takes an options array and adds the pgbackrest
+// logging options, honoring the optional log configuration or falling back to defaults.
+//
+// Every pgbackrest command builder funnels through this function, so it is also the
+// single place where we make sure the configured log directory exists.
 func AppendLogOptionsFromConfiguration(
 	ctx context.Context,
 	options []string,
-	configuration *pgbackrestApi.PgbackrestConfiguration, // nolint: revive
+	configuration *pgbackrestApi.PgbackrestConfiguration,
 ) (resOptions []string, err error) {
-	return appendLogOptions(ctx, options)
+	ensureLogPath(ctx, configuration)
+	return appendLogOptions(ctx, options, configuration)
 }
 
-// appendLogOptions takes an options array and adds the stanza-specific pgbackrest
-// options required for all operations connecting to the database
+// ensureLogPath creates the configured log directory if one is set. pgbackrest does not
+// create its log path by itself: when the directory is missing it merely warns and then
+// continues without file logging. Creating it ahead of time (best effort) ensures that a
+// configured log path actually produces log files. A failure here is intentionally not
+// fatal, mirroring pgbackrest's own behavior of continuing without file logging.
+func ensureLogPath(ctx context.Context, configuration *pgbackrestApi.PgbackrestConfiguration) {
+	if configuration.Log == nil || configuration.Log.Path == "" {
+		return
+	}
+	if err := os.MkdirAll(configuration.Log.Path, 0o750); err != nil {
+		log.FromContext(ctx).WithName("pgbackrest").Error(
+			err,
+			"Unable to create pgbackrest log path, file logging may be disabled",
+			"path", configuration.Log.Path,
+		)
+	}
+}
+
+// appendLogOptions takes an options array and adds the pgbackrest logging options.
+// When no log configuration is provided it preserves the historical defaults:
+// stderr at "warn" and no file logging.
+//
+// Console logging is always pinned to "off" and is deliberately not
+// configurable: the plugin reserves stdout for the machine-readable JSON emitted
+// by "info --output=json", so any console output would corrupt catalog parsing.
+// pgBackRest's own default for log-level-console is "warn", so we must pass the
+// flag explicitly rather than rely on the default. Pod-log verbosity is
+// controlled via stderr, and on-disk detail via file logging.
 func appendLogOptions(
 	_ context.Context,
 	options []string,
+	configuration *pgbackrestApi.PgbackrestConfiguration,
 ) ([]string, error) {
-	// TODO: Those options likely shouldn't be hardcoded.
-	// TODO: Maybe configure log path to a writable directory?
+	stderrLevel := "warn"
+
+	logConfig := configuration.Log
+	if logConfig != nil {
+		if logConfig.LevelStderr != "" {
+			stderrLevel = logConfig.LevelStderr
+		}
+	}
+
 	options = append(
 		options,
 		"--log-level-stderr",
-		"warn",
+		stderrLevel,
 		"--log-level-console",
 		"off",
 	)
+
+	if logConfig != nil {
+		if logConfig.LevelFile != "" {
+			options = append(options, "--log-level-file", logConfig.LevelFile)
+		}
+		if logConfig.Path != "" {
+			options = append(options, "--log-path", logConfig.Path)
+		}
+	}
 
 	return options, nil
 }

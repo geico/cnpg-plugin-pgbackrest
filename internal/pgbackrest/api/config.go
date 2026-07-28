@@ -253,6 +253,36 @@ type DataBackupConfiguration struct {
 	AdditionalCommandArgs []string `json:"additionalCommandArgs,omitempty"`
 }
 
+// LogConfiguration controls the pgBackRest logging destinations and
+// verbosity levels. All fields are optional; when unset the plugin keeps its
+// historical defaults (stderr at "warn" and no file logging).
+//
+// Console (stdout) logging is intentionally not configurable: the plugin
+// streams pgBackRest's stderr into the pod logs and reserves stdout for the
+// machine-readable JSON emitted by "info --output=json". Console logging is
+// therefore always pinned to "off" so that JSON output stays parseable. Use
+// LevelStderr for pod-log verbosity and LevelFile for on-disk detail.
+type LogConfiguration struct {
+	// Log level for messages written to stderr.
+	// Defaults to "warn".
+	// +optional
+	// +kubebuilder:validation:Enum=off;error;warn;info;detail;debug;trace
+	LevelStderr string `json:"levelStderr,omitempty"`
+
+	// Log level for messages written to log files.
+	// When unset no file logging option is passed to pgBackRest.
+	// Requires a writable Path to be useful.
+	// +optional
+	// +kubebuilder:validation:Enum=off;error;warn;info;detail;debug;trace
+	LevelFile string `json:"levelFile,omitempty"`
+
+	// Path is the directory where pgBackRest writes log files.
+	// It must point to a writable directory. When unset no log path option is
+	// passed to pgBackRest.
+	// +optional
+	Path string `json:"path,omitempty"`
+}
+
 // DataRestoreConfiguration is the configuration of the main backup restore process
 // (pgbackrest restore call) which is then followed by a series of WAL restore
 // (pgbackrest archive-get) calls using the WalBackupConfiguration
@@ -351,6 +381,13 @@ type PgbackrestConfiguration struct {
 	// this parameter is omitted
 	// +optional
 	Stanza string `json:"stanza,omitempty"`
+
+	// The logging configuration applied to all pgBackRest commands.
+	// When not defined, stderr logging is set to "warn" and no file logging is
+	// configured. Console (stdout) logging is always pinned to "off" so that the
+	// JSON emitted by "info --output=json" stays parseable.
+	// +optional
+	Log *LogConfiguration `json:"log,omitempty"`
 }
 
 // ArePopulated checks if the passed set of credentials contains

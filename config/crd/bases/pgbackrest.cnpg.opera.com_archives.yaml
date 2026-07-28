@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.16.2
   name: archives.pgbackrest.cnpg.opera.com
 spec:
   group: pgbackrest.cnpg.opera.com
@@ -101,6 +101,47 @@ spec:
                           Annotations is a list of key value pairs that will be passed to the
                           pgbackrest --annotation option.
                         type: object
+                    type: object
+                  log:
+                    description: |-
+                      The logging configuration applied to all pgBackRest commands.
+                      When not defined, stderr logging is set to "warn" and no file logging is
+                      configured. Console (stdout) logging is always pinned to "off" so that the
+                      JSON emitted by "info --output=json" stays parseable.
+                    properties:
+                      levelFile:
+                        description: |-
+                          Log level for messages written to log files.
+                          When unset no file logging option is passed to pgBackRest.
+                          Requires a writable Path to be useful.
+                        enum:
+                        - "off"
+                        - error
+                        - warn
+                        - info
+                        - detail
+                        - debug
+                        - trace
+                        type: string
+                      levelStderr:
+                        description: |-
+                          Log level for messages written to stderr.
+                          Defaults to "warn".
+                        enum:
+                        - "off"
+                        - error
+                        - warn
+                        - info
+                        - detail
+                        - debug
+                        - trace
+                        type: string
+                      path:
+                        description: |-
+                          Path is the directory where pgBackRest writes log files.
+                          It must point to a writable directory. When unset no log path option is
+                          passed to pgBackRest.
+                        type: string
                     type: object
                   repositories:
                     items:
