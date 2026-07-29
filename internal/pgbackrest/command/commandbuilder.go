@@ -156,7 +156,17 @@ func appendCloudProviderOptions(
 	options []string,
 	repoIndex int,
 	repository pgbackrestApi.PgbackrestRepository,
-) ([]string, error) { // nolint: unparam
+) ([]string, error) {
+	// A single pgBackRest repository can only target one storage type. If both
+	// credential blocks are set the configuration is ambiguous, so fail fast
+	// instead of silently letting one provider win.
+	if repository.HasConflictingCloudProviders() {
+		return nil, fmt.Errorf(
+			"repository \"repo%d\" has both s3Credentials and azureCredentials set; "+
+				"exactly one storage type must be configured per repository",
+			repoIndex+1,
+		)
+	}
 	if repository.Azure != nil {
 		return appendAzureOptions(options, repoIndex, repository), nil
 	}

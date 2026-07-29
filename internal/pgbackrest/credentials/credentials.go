@@ -107,6 +107,16 @@ func envSetCloudCredentials(
 	env []string,
 ) (envs []string, err error) {
 	for index, repo := range configuration.Repositories {
+		// A single pgBackRest repository can only target one storage type.
+		// Reject configurations that set multiple credential blocks so we
+		// don't inject conflicting env vars for the same repo.
+		if repo.HasConflictingCloudProviders() {
+			return nil, fmt.Errorf(
+				"repository \"repo%d\" has both s3Credentials and azureCredentials set; "+
+					"exactly one storage type must be configured per repository",
+				index+1,
+			)
+		}
 		if repo.AWS != nil {
 			env, err = envSetAWSCredentials(ctx, c, namespace, repo.AWS, index, env)
 			if err != nil {

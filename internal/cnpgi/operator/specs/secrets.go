@@ -25,6 +25,13 @@ import (
 
 // CollectSecretNamesFromCredentials collects the names of the secrets
 func CollectSecretNamesFromCredentials(pgbackrestCredentials *pgbackrestApi.PgbackrestCredentials) []string {
+	// A repository with both credential types set is an invalid configuration
+	// that is rejected upstream when building the pgBackRest command/env vars;
+	// don't grant RBAC access to secrets from an ambiguous configuration here.
+	if pgbackrestCredentials.HasConflictingCloudProviders() {
+		return nil
+	}
+
 	var references []*machineryapi.SecretKeySelector
 	if pgbackrestCredentials.AWS != nil {
 		references = append(

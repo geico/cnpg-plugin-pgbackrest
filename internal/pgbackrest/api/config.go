@@ -148,6 +148,13 @@ type PgbackrestCredentials struct {
 	Azure *AzureCredentials `json:"azureCredentials,omitempty"`
 }
 
+// HasConflictingCloudProviders reports whether more than one cloud provider
+// credential block is configured. A single pgBackRest repository can only
+// target one storage type, so having both set is an invalid configuration.
+func (c PgbackrestCredentials) HasConflictingCloudProviders() bool {
+	return c.AWS != nil && c.Azure != nil
+}
+
 // PgbackrestRetention an object containing the backup retention time for all backup
 // types supported by pgbackrest.
 type PgbackrestRetention struct {

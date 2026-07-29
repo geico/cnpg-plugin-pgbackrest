@@ -110,3 +110,29 @@ var _ = Describe("envSetAzureCredentials", func() {
 		Expect(err).To(MatchError(ContainSubstring("missing key MISSING_KEY")))
 	})
 })
+
+var _ = Describe("envSetCloudCredentials", func() {
+	const namespace = "default"
+
+	buildClient := func(objects ...client.Object) client.Client {
+		scheme := runtime.NewScheme()
+		Expect(corev1.AddToScheme(scheme)).To(Succeed())
+		return fake.NewClientBuilder().WithScheme(scheme).WithObjects(objects...).Build()
+	}
+
+	It("fails fast when a repository sets both s3 and azure credentials", func(ctx SpecContext) {
+		cl := buildClient()
+		configuration := &pgbackrestApi.PgbackrestConfiguration{
+			Repositories: []pgbackrestApi.PgbackrestRepository{
+				{
+					PgbackrestCredentials: pgbackrestApi.PgbackrestCredentials{
+						AWS:   &pgbackrestApi.S3Credentials{},
+						Azure: &pgbackrestApi.AzureCredentials{},
+					},
+				},
+			},
+		}
+		_, err := envSetCloudCredentials(ctx, cl, namespace, configuration, nil)
+		Expect(err).To(MatchError(ContainSubstring("both s3Credentials and azureCredentials set")))
+	})
+})

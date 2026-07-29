@@ -108,6 +108,13 @@ var _ = Describe("pgbackrestWalRestoreOptions with Azure repository", func() {
 				))
 		Expect(options).ToNot(ContainElement(ContainSubstring("azure-endpoint")))
 	})
+
+	It("should fail fast when both s3 and azure credentials are set", func(ctx SpecContext) {
+		storageConf.Repositories[0].AWS = &pgbackrestApi.S3Credentials{}
+		_, err := CloudWalRestoreOptions(ctx, storageConf, "test-cluster", "/var/lib/postgres/pgdata")
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("both s3Credentials and azureCredentials set"))
+	})
 })
 
 var _ = Describe("PgbackrestRetention", func() {
