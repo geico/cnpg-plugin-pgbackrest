@@ -144,6 +144,58 @@ var _ = Describe("pgbackrest info parsing", func() {
 			Equal(time.Date(2025, 3, 31, 14, 20, 41, 0, time.UTC)))
 	})
 
+	It("reports the stanza as existing when the status is ok", func() {
+		result, err := NewCatalogFromPgbackrestInfo(pgbackrestInfoOutput)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(result.Status.Code).To(Equal(0))
+		Expect(result.StanzaExists()).To(BeTrue())
+	})
+})
+
+var _ = Describe("pgbackrest stanza existence detection", func() {
+	// "pgbackrest info --stanza=X" exits successfully even when the stanza has
+	// never been created, returning a single entry with the "missing stanza path"
+	// status code.
+	const missingStanzaOutput = `[
+  {
+    "archive": [],
+    "backup": [],
+    "cipher": "none",
+    "db": [],
+    "name": "cluster-example",
+    "status": { "code": 1, "lock": { "backup": { "held": false } }, "message": "missing stanza path" }
+  }
+]`
+
+	// After "stanza-create" but before any backup, the stanza exists but has no
+	// valid backups yet (status code 2). WAL archiving must work in this state.
+	const noValidBackupsOutput = `[
+  {
+    "archive": [],
+    "backup": [],
+    "cipher": "none",
+    "db": [
+      { "id": 1, "repo-key": 1, "system-id": 7487970936345972767, "version": "17" }
+    ],
+    "name": "cluster-example",
+    "status": { "code": 2, "lock": { "backup": { "held": false } }, "message": "no valid backups" }
+  }
+]`
+
+	It("reports a missing stanza as not existing", func() {
+		result, err := NewCatalogFromPgbackrestInfo(missingStanzaOutput)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(result.Status.Code).To(Equal(StanzaMissingStatusCode))
+		Expect(result.StanzaExists()).To(BeFalse())
+	})
+
+	It("reports a created stanza without backups as existing", func() {
+		result, err := NewCatalogFromPgbackrestInfo(noValidBackupsOutput)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(result.Status.Code).To(Equal(2))
+		Expect(result.StanzaExists()).To(BeTrue())
+	})
+
 	// It("can find the closest backup info when there is one", func() {
 	// 	recoveryTarget := &v1.RecoveryTarget{TargetTime: time.Now().Format("2006-01-02 15:04:04")}
 	// 	closestBackupInfo, err := catalog.FindBackupInfo(recoveryTarget)

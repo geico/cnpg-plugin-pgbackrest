@@ -328,6 +328,16 @@ type PgbackrestBackup struct {
 	Type string `json:"type"`
 }
 
+// StanzaMissingStatusCode is the status code reported by "pgbackrest info" when
+// the stanza has not been created yet (its message is "missing stanza path").
+const StanzaMissingStatusCode = 1
+
+// PgbackrestStatus represents the status "pgbackrest info" reports for a stanza
+type PgbackrestStatus struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
 // Catalog represents a catalog of archive and backup storages of a specific stanza
 type Catalog struct {
 	Archive    []PgbackrestWALArchive     `json:"archive"`
@@ -335,6 +345,14 @@ type Catalog struct {
 	Stanza     string                     `json:"name"`
 	Databases  []PgbackrestBackupDatabase `json:"db"`
 	Encryption string                     `json:"cipher"`
+	Status     PgbackrestStatus           `json:"status"`
+}
+
+// StanzaExists reports whether the stanza has already been created in the
+// repository. "pgbackrest info" succeeds even for a missing stanza, reporting it
+// through the StanzaMissingStatusCode status code instead of a command error.
+func (catalog *Catalog) StanzaExists() bool {
+	return catalog.Status.Code != StanzaMissingStatusCode
 }
 
 // NewSingleBackupCatalogFromPgbackrestInfo parses the output of pgbackrest info
