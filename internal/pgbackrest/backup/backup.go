@@ -167,6 +167,11 @@ func (b *Command) GetPgbackrestBackupOptions(
 		"--lock-path",
 		"/controller/tmp/pgbackrest",
 		"--no-archive-check",
+		// CNPG stores postgresql.auto.conf read-only (0400). pgbackrest always
+		// rewrites that file on restore and would fail with a permission error on
+		// the read-only copy. Excluding it from the backup means restore recreates
+		// it fresh and writable; the operator manages its contents anyway.
+		"--exclude=postgresql.auto.conf",
 	)
 
 	return options, nil
