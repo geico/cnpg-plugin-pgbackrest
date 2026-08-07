@@ -84,22 +84,6 @@ var _ = Describe("appendLogOptions", func() {
 		Expect(strings.Join(options, " ")).
 			To(Equal("--log-level-stderr debug --log-level-console off"))
 	})
-
-	It("should emit file logging options only when configured", func(ctx SpecContext) {
-		config := &pgbackrestApi.PgbackrestConfiguration{
-			Log: &pgbackrestApi.LogConfiguration{
-				LevelFile: "debug",
-				Path:      "/controller/tmp/pgbackrest-logs",
-			},
-		}
-		options, err := appendLogOptions(ctx, nil, config)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(strings.Join(options, " ")).
-			To(Equal(
-				"--log-level-stderr warn --log-level-console off " +
-					"--log-level-file debug --log-path /controller/tmp/pgbackrest-logs",
-			))
-	})
 })
 
 var _ = Describe("PgbackrestRetention", func() {

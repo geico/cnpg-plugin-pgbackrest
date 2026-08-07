@@ -20,10 +20,7 @@ package command
 import (
 	"context"
 	"fmt"
-	"os"
 	"strconv"
-
-	"github.com/cloudnative-pg/machinery/pkg/log"
 
 	pgbackrestApi "github.com/operasoftware/cnpg-plugin-pgbackrest/internal/pgbackrest/api"
 	"github.com/operasoftware/cnpg-plugin-pgbackrest/internal/pgbackrest/utils"
@@ -235,34 +232,12 @@ func appendStanzaOptions(
 
 // AppendLogOptionsFromConfiguration takes an options array and adds the pgbackrest
 // logging options, honoring the optional log configuration or falling back to defaults.
-//
-// Every pgbackrest command builder funnels through this function, so it is also the
-// single place where we make sure the configured log directory exists.
 func AppendLogOptionsFromConfiguration(
 	ctx context.Context,
 	options []string,
 	configuration *pgbackrestApi.PgbackrestConfiguration,
 ) (resOptions []string, err error) {
-	ensureLogPath(ctx, configuration)
 	return appendLogOptions(ctx, options, configuration)
-}
-
-// ensureLogPath creates the configured log directory if one is set. pgbackrest does not
-// create its log path by itself: when the directory is missing it merely warns and then
-// continues without file logging. Creating it ahead of time (best effort) ensures that a
-// configured log path actually produces log files. A failure here is intentionally not
-// fatal, mirroring pgbackrest's own behavior of continuing without file logging.
-func ensureLogPath(ctx context.Context, configuration *pgbackrestApi.PgbackrestConfiguration) {
-	if configuration.Log == nil || configuration.Log.Path == "" {
-		return
-	}
-	if err := os.MkdirAll(configuration.Log.Path, 0o750); err != nil {
-		log.FromContext(ctx).WithName("pgbackrest").Error(
-			err,
-			"Unable to create pgbackrest log path, file logging may be disabled",
-			"path", configuration.Log.Path,
-		)
-	}
 }
 
 // appendLogOptions takes an options array and adds the pgbackrest logging options.
@@ -296,15 +271,6 @@ func appendLogOptions(
 		"--log-level-console",
 		"off",
 	)
-
-	if logConfig != nil {
-		if logConfig.LevelFile != "" {
-			options = append(options, "--log-level-file", logConfig.LevelFile)
-		}
-		if logConfig.Path != "" {
-			options = append(options, "--log-path", logConfig.Path)
-		}
-	}
 
 	return options, nil
 }

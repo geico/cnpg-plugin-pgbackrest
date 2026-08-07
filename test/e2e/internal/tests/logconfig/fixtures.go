@@ -33,22 +33,11 @@ const (
 	backupName  = "logcfg"
 	archiveName = "logcfg"
 
-	// pluginContainer is the name of the pgBackRest sidecar injected into the instance pods.
-	pluginContainer = "plugin-pgbackrest"
-	// postgresContainer is the main instance container. It shares the /controller volume with
-	// the sidecar and, unlike the distroless sidecar, ships a shell + coreutils so we can
-	// inspect the log files pgBackRest writes.
+	pluginContainer   = "plugin-pgbackrest"
 	postgresContainer = "postgres"
 
-	// logPath is where we ask pgBackRest to write its log files. /controller is the shared
-	// scratch volume mounted in both the sidecar and the postgres container, and the plugin
-	// already creates subdirectories under /controller/tmp (e.g. for its lock files), so
-	// pgBackRest is able to create this directory too.
-	logPath = "/controller/tmp/pgbackrest-logs"
-
-	// The configured log levels under test.
+	// The configured stderr log level under test.
 	stderrLevel = "debug"
-	fileLevel   = "debug"
 )
 
 type logConfigTestResources struct {
@@ -58,15 +47,10 @@ type logConfigTestResources struct {
 	Backup               *cloudnativepgv1.Backup
 }
 
-// createLogConfigTestResources builds every resource needed by the log configuration test:
-// a Minio object store, an Archive whose configuration carries an explicit log block, a
-// cluster wired to the plugin and a plugin backup.
 func createLogConfigTestResources(namespace string) logConfigTestResources {
 	archive := objectstore.NewMinioArchive(namespace, archiveName, minio, 1)
 	archive.Spec.Configuration.Log = &pgbackrestApi.LogConfiguration{
 		LevelStderr: stderrLevel,
-		LevelFile:   fileLevel,
-		Path:        logPath,
 	}
 
 	return logConfigTestResources{
